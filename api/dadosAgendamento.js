@@ -23,6 +23,7 @@ module.exports = app => {
             })
             .catch(err => res.status(400).json(err))
     }
+
     const save = (req, res) => {
         const { bloco, apartamento } = req.body;
 
@@ -118,7 +119,6 @@ module.exports = app => {
 
             return res.status(204).send();  // Sucesso
         } catch (err) {
-            console.log('Eroo>>>', err);
             return res.status(400).json({ error: err.message });
         }
     };
@@ -198,6 +198,7 @@ module.exports = app => {
     };
 
     const mes = (req, res) => {
+        console.log('Chegou aqui!!!!');
         const startOfDay = moment().startOf('day').format('YYYY-MM-DD');
         const endOfMonth = moment().add(30, 'days').endOf('day').format('YYYY-MM-DD');
         app.db('dados_agendamento')

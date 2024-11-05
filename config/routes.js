@@ -1,5 +1,5 @@
 module.exports = app => {
-    app.get('/teste', (req, res) => res.json({ ok: 'tudo funcionano 2027' }))
+    app.get('/teste', (req, res) => res.json({ ok: 'Api Ativa - 2025' }))
     app.post('/signup', app.api.user.save)
     app.post('/signin', app.api.auth.signin)
 
@@ -7,10 +7,6 @@ module.exports = app => {
         .all(app.config.passport.authenticate())
         .get(app.api.dadosAgendamento.getAgendamento)
         .post(app.api.dadosAgendamento.savePostgreEParse)
-
-    app.route('/hojeOuAmanha')
-        .all(app.config.passport.authenticate())
-        .get(app.api.dadosAgendamento.hojeOuAmanha)
 
     app.route('/agendamento/:id')
         .all(app.config.passport.authenticate())
@@ -23,5 +19,21 @@ module.exports = app => {
     app.route('/agendamento/getAllAgendamentos')
         .all(app.config.passport.authenticate())
         .get(app.api.dadosAgendamento.getAllAgendamentos)
+
+        app.route('/hoje')
+        .all(app.config.passport.authenticate())
+        .get(app.api.dadosAgendamento.hoje)
+
+    app.route('/amanha')
+        .all(app.config.passport.authenticate())
+        .get(app.api.dadosAgendamento.amanha)
+
+    app.route('/semana')
+        .all(app.config.passport.authenticate())
+        .get(app.api.dadosAgendamento.semana)
+
+    app.route('/mes')
+        .all(app.config.passport.authenticate())
+        .get(app.api.dadosAgendamento.mes)
 
 }
