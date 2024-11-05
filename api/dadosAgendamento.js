@@ -24,7 +24,7 @@ module.exports = app => {
             .catch(err => res.status(400).json(err))
     }
 
-    const hojeOuAmanha = (req, res) => {
+    /* const hojeOuAmanha = (req, res) => {
 
         let date;
         if (req.query.date) {
@@ -62,8 +62,55 @@ module.exports = app => {
                 return res.json(agendamento);
             })
             .catch(err => res.status(400).json(err));
-    };
+    }; */
 
+    const hojeOuAmanha = (req, res) => {
+        let date;
+    
+        if (req.query.date) {
+            // Obtém a data requisitada e a converte para o formato YYYY-MM-DD sem a hora
+            const requestedDate = new Date(req.query.date);
+            requestedDate.setUTCHours(0, 0, 0, 0);
+    
+            // Cria a data para amanhã no fuso horário do Brasil (UTC-3)
+            const tomorrow = new Date();
+            tomorrow.setUTCHours(0, 0, 0, 0);
+            tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    
+            // Verifica se a data requisitada é amanhã
+            if (requestedDate.getTime() === tomorrow.getTime()) {
+                // Define o intervalo para o dia seguinte
+                date = {
+                    start: tomorrow.toISOString().slice(0, 10),  // YYYY-MM-DD
+                    end: tomorrow.toISOString().slice(0, 10),    // YYYY-MM-DD
+                };
+            } else {
+                // Define o intervalo para a data fornecida
+                date = {
+                    start: requestedDate.toISOString().slice(0, 10),  // YYYY-MM-DD
+                    end: requestedDate.toISOString().slice(0, 10),    // YYYY-MM-DD
+                };
+            }
+        } else {
+            // Se nenhuma data foi fornecida, usa a data de hoje
+            const today = new Date();
+            today.setUTCHours(0, 0, 0, 0);
+    
+            date = {
+                start: today.toISOString().slice(0, 10),  // YYYY-MM-DD
+                end: today.toISOString().slice(0, 10),    // YYYY-MM-DD
+            };
+        }
+    
+        app.db('dados_agendamento')
+            .where({ userId: req.user.id })
+            .where('dataAgendamento', '>=', date.start)
+            .where('dataAgendamento', '<=', date.end)
+            .orderBy('dataAgendamento')
+            .then(agendamento => res.json(agendamento))
+            .catch(err => res.status(400).json(err));
+    };
+    
     /* const save = (req, res) => {
         const { bloco, apartamento } = req.body;
 
