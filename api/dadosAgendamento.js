@@ -23,69 +23,6 @@ module.exports = app => {
             })
             .catch(err => res.status(400).json(err))
     }
-
-    const hojeOuAmanha = (req, res) => {
-
-        let date;
-        if (req.query.date) {
-            const requestedDate = moment(req.query.date).startOf('day');
-            const tomorrow = moment().add(1, 'day').startOf('day');
-
-            // Verifica se a data requisitada é igual à data atual mais um dia
-            if (requestedDate.isSame(tomorrow, 'day')) {
-                // Se for igual, busca apenas os agendamentos desse dia
-                date = {
-                    start: tomorrow.toDate(),
-                    end: moment().add(1, 'day').endOf('day').toDate(),
-                };
-            } else {
-                // Caso contrário, usa a data fornecida na requisição
-                date = {
-                    start: requestedDate.toDate(),
-                    end: requestedDate.endOf('day').toDate(),
-                };
-            }
-        } else {
-            // Se nenhuma data for fornecida, busca até o final do dia atual
-            date = {
-                start: moment().startOf('day').toDate(),
-                end: moment().endOf('day').toDate(),
-            };
-        }
-
-        app.db('dados_agendamento')
-            .where({ userId: req.user.id })
-            .where('dataAgendamento', '>=', date.start)
-            .where('dataAgendamento', '<=', date.end)
-            .orderBy('dataAgendamento')
-            .then(agendamento => {
-                return res.json(agendamento);
-            })
-            .catch(err => res.status(400).json(err));
-    };
-
-    /* const save = (req, res) => {
-        const { bloco, apartamento } = req.body;
-
-        // Verifica se o bloco é fornecido e se não está vazio
-        if (!bloco || typeof bloco !== 'string' || !bloco.trim()) {
-            return res.status(400).send('Bloco é um campo obrigatório');
-        }
-
-        // Verifica se o apartamento é fornecido e se não está vazio
-        if (!apartamento || typeof apartamento !== 'string' || !apartamento.trim()) {
-            return res.status(400).send('Apartamento é um campo obrigatório');
-        }
-
-        req.body.userId = req.user.id
-
-        app.db('dados_agendamento')
-            .insert(req.body)
-            .then(_ => res.status(204).send())
-            .catch(err => res.status(400).json(err))
-    } */
-
-
     const save = (req, res) => {
         const { bloco, apartamento } = req.body;
 
@@ -143,35 +80,6 @@ module.exports = app => {
             throw new Error(error.response.data.error || 'Erro ao cadastrar agendamento no Parse Server');
         }
     };
-
-
-    /* const savePostgreEParse = async (req, res) => {
-        const { bloco, apartamento } = req.body;
-
-        // Verifica se o bloco é fornecido e se não está vazio
-        if (!bloco || typeof bloco !== 'string' || !bloco.trim()) {
-            return res.status(400).send('Bloco é um campo obrigatório');
-        }
-
-        // Verifica se o apartamento é fornecido e se não está vazio
-        if (!apartamento || typeof apartamento !== 'string' || !apartamento.trim()) {
-            return res.status(400).send('Apartamento é um campo obrigatório');
-        }
-
-        req.body.userId = req.user.id;
-
-        try {
-            // Salvar tarefa no banco de dados e obter o id gerado
-            const [idAgendamento] = await app.db('dados_agendamento').insert(req.body).returning('id');
-
-            // Usar o id gerado (idAgendamento) para o agendamento no Parse Server
-            const agendamentoResponse = await cadastrarNoParseServer(req, res, idAgendamento);
-
-            return res.status(204).send();  // Retorna sucesso
-        } catch (err) {
-            return res.status(400).json({ error: err.message });
-        }
-    }; */
 
     const savePostgreEParse = async (req, res) => {
         const { bloco, apartamento, dataAgendamento } = req.body;
@@ -258,5 +166,47 @@ module.exports = app => {
     };
 
 
-    return { getAgendamento, save, remove, hojeOuAmanha, cadastrarNoParseServer, getAgendamentoParse, deletarAgendamento, savePostgreEParse, removePostgresEParse, getAllAgendamentos };
+    const hoje = (req, res) => {
+        const startOfDay = moment().startOf('day').format('YYYY-MM-DD');
+        app.db('dados_agendamento')
+            .where({ userId: req.user.id })
+            .where('dataAgendamento', '=', startOfDay)
+            .orderBy('dataAgendamento')
+            .then(agendamentos => res.json(agendamentos))
+            .catch(err => res.status(400).json(err));
+    };
+
+    const amanha = (req, res) => {
+        const tomorrow = moment().add(1, 'day').startOf('day').format('YYYY-MM-DD');
+        app.db('dados_agendamento')
+            .where({ userId: req.user.id })
+            .where('dataAgendamento', '=', tomorrow)
+            .orderBy('dataAgendamento')
+            .then(agendamentos => res.json(agendamentos))
+            .catch(err => res.status(400).json(err));
+    };
+
+    const semana = (req, res) => {
+        const startOfDay = moment().startOf('day').format('YYYY-MM-DD');
+        const endOfWeek = moment().add(7, 'days').endOf('day').format('YYYY-MM-DD');
+        app.db('dados_agendamento')
+            .where({ userId: req.user.id })
+            .whereBetween('dataAgendamento', [startOfDay, endOfWeek])
+            .orderBy('dataAgendamento')
+            .then(agendamentos => res.json(agendamentos))
+            .catch(err => res.status(400).json(err));
+    };
+
+    const mes = (req, res) => {
+        const startOfDay = moment().startOf('day').format('YYYY-MM-DD');
+        const endOfMonth = moment().add(30, 'days').endOf('day').format('YYYY-MM-DD');
+        app.db('dados_agendamento')
+            .where({ userId: req.user.id })
+            .whereBetween('dataAgendamento', [startOfDay, endOfMonth])
+            .orderBy('dataAgendamento')
+            .then(agendamentos => res.json(agendamentos))
+            .catch(err => res.status(400).json(err));
+    };
+
+    return { getAgendamento, save, remove, cadastrarNoParseServer, getAgendamentoParse, deletarAgendamento, savePostgreEParse, removePostgresEParse, getAllAgendamentos, hoje, amanha, semana, mes };
 }
